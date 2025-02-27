@@ -16,6 +16,9 @@ O universo da cultura e do entretenimento é vasto e fascinante. De filmes a liv
         
         if rag == 'rag_true':
             historico_mensagens = ''.join(TalkController.database)
+            if len(historico_mensagens) > 4000 :
+               TalkController.database.pop(0)
+               print(len(historico_mensagens))
             chat_message = f"Considerando o historico de mensagens:{historico_mensagens}, e o contexto:{TalkController.contexto}, responda a seguinte pergunta: {user_data['user_message']}, utilize o contexto somente se ele for util para resposta e constar na pergunta algo relacionado."
             chat_completion = client.chat.completions.create(
                 messages=[
@@ -35,6 +38,9 @@ O universo da cultura e do entretenimento é vasto e fascinante. De filmes a liv
                 {'messages': chat_completion.choices[0].message.content, "user_message": user_data['user_message']})
         else:
             historico_mensagens = ''.join(TalkController.database)
+            if len(historico_mensagens) > 4000 :
+               TalkController.database.pop(0)
+               print(len(historico_mensagens))
             chat_message = f"Considerando o seguinte contexto:{historico_mensagens}, responda a seguinte pergunta: {user_data['user_message']}"
             chat_completion = client.chat.completions.create(
                 messages=[
