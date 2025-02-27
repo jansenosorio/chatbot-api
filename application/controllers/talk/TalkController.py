@@ -1,4 +1,6 @@
+import os
 from flask import request, jsonify
+from groq import Groq
 
 class TalkController:
     database = [] 
@@ -10,11 +12,44 @@ O universo da cultura e do entretenimento é vasto e fascinante. De filmes a liv
     def talk(rag):
         user_data = request.get_json()
         
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        
         if rag == 'rag_true':
-            return jsonify({'message': 'Hello, World!'})
+            historico_mensagens = ''.join(TalkController.database)
+            chat_message = f"Considerando o historico de mensagens:{historico_mensagens}, e o contexto:{TalkController.contexto}, responda a seguinte pergunta: {user_data['user_message']}, utilize o contexto somente se ele for util para resposta e constar na pergunta algo relacionado."
+            chat_completion = client.chat.completions.create(
+                messages=[
+
+                    {
+                        "role": "user",
+                        "content": chat_message,
+                    }
+                ],
+                model="llama-3.3-70b-versatile",
+                temperature=0,
+                max_completion_tokens=1024,
+            )
+            TalkController.database.append(
+                f"Pergunta:{user_data['user_message']}, RespostaLLM: {chat_completion.choices[0].message.content}")
+            return jsonify(
+                {'messages': chat_completion.choices[0].message.content, "user_message": user_data['user_message']})
         else:
-            TalkController.database.append(user_data['user_message'])
-            return jsonify({'messages': TalkController.database, 'user_data': user_data})
+            historico_mensagens = ''.join(TalkController.database)
+            chat_message = f"Considerando o seguinte contexto:{historico_mensagens}, responda a seguinte pergunta: {user_data['user_message']}"
+            chat_completion = client.chat.completions.create(
+                messages=[
+
+                    {
+                        "role": "user",
+                        "content":  chat_message,
+                    }
+                ],
+                model="gemma2-9b-it",
+                temperature=0,
+                max_completion_tokens=1024,
+            )
+            TalkController.database.append(f"Pergunta:{user_data['user_message']}, RespostaLLM: {chat_completion.choices[0].message.content}")
+            return jsonify({'messages': chat_completion.choices[0].message.content, "user_message": user_data['user_message']})
 
        
         
